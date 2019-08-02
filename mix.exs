@@ -65,7 +65,7 @@ defmodule Proxy.Mixfile do
         # NOTE: Must be at the bottom (:edeliver)
         #:edeliver,
       ],
-      mod: {Proxy, []}
+      mod: {OutProxy, []}
     ]
   end
 
