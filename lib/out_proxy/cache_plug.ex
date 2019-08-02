@@ -1,6 +1,6 @@
-defmodule Proxy.CachePlug do
+defmodule OutProxy.CachePlug do
   import Plug.Conn
-  alias Proxy.{Cache, Utils}
+  alias OutProxy.{Cache, Utils}
   require Logger
 
   def init(opts), do: opts

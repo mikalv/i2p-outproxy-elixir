@@ -1,4 +1,4 @@
-defmodule CountServer do
+defmodule OutProxy.CountServer do
   use GenServer
   require Logger
 

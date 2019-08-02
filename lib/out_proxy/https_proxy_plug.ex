@@ -1,4 +1,4 @@
-defmodule Proxy.HttpsProxyPlug do
+defmodule OutProxy.HttpsProxyPlug do
   import Plug.Conn
   require Logger
 

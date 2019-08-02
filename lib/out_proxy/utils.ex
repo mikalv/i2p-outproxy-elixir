@@ -1,4 +1,4 @@
-defmodule Proxy.Utils do
+defmodule OutProxy.Utils do
   import Plug.Conn
 
   def build_body(conn), do: build_body(conn, "")

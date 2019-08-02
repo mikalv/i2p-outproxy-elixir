@@ -1,4 +1,4 @@
-defmodule Proxy.ProxyPlug do
+defmodule OutProxy.ProxyPlug do
   use Plug.Builder
 
   @host Application.get_env :proxy, :host
@@ -12,10 +12,10 @@ defmodule Proxy.ProxyPlug do
   # If connection is not HTTPS, pass through, otherwise tunnel encrypted data
   # If at the end of the pipeline we do a regular HTTP proxy and cache results
   plug Plug.Logger
-  plug Proxy.BlockPlug
-  plug Proxy.CachePlug
-  plug Proxy.HttpsProxyPlug
-  plug Proxy.HttpProxyPlug
+  plug OutProxy.BlockPlug
+  plug OutProxy.CachePlug
+  plug OutProxy.HttpsProxyPlug
+  plug OutProxy.HttpProxyPlug
 
   def start_link do
     {:ok, _} = Plug.Adapters.Cowboy.http __MODULE__, [], port: @port

@@ -1,7 +1,7 @@
-defmodule Proxy.Cache do
+defmodule OutProxy.Cache do
   use GenServer
   use Timex
-  alias Proxy.Utils
+  alias OutProxy.Utils
   require Logger
 
   @name __MODULE__
