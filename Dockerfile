@@ -1,6 +1,6 @@
 # Multistage build
 # Build container
-FROM elixir:1.8.1-alpine as build
+FROM elixir:1.9.1-alpine as build
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
