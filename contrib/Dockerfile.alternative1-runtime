@@ -1,0 +1,17 @@
+# ---- Application Stage ----
+FROM debian:stretch AS app
+
+ENV LANG=C.UTF-8
+
+# Install openssl
+RUN apt-get update && apt-get install -y openssl
+
+# Copy over the build artifact from the previous step and create a non root user
+RUN useradd --create-home app
+WORKDIR /home/app
+COPY --from=app_builder /app/_build .
+RUN chown -R app: ./prod
+USER app
+
+# Run the Phoenix app
+CMD ["./prod/rel/docker_elixir_19_release/bin/docker_elixir_19_release", "start"]
