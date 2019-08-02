@@ -19,6 +19,8 @@ defmodule Proxy do
       supervisor(Task.Supervisor, [[name: SocksServer.TaskSupervisor]]),
       # Starts a worker by calling: SocksServer.Worker.start_link(arg1, arg2, arg3)
       worker(Task, [SocksServer.TCP, :listen, [socks_port]]),
+      # I2P SAM client
+      worker(I2psam.SamConnectionManager, []),
     ]
 
     opts = [strategy: :one_for_one, name: Proxy.Supervisor]
