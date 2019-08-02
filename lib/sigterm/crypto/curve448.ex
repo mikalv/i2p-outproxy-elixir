@@ -1,4 +1,4 @@
-defmodule Curve448 do
+defmodule Sigterm.Crypto.Curve448 do
   import Bitwise
 
   @moduledoc """

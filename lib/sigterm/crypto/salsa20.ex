@@ -1,4 +1,4 @@
-defmodule Salsa20 do
+defmodule Sigterm.Crypto.Salsa20 do
   @moduledoc """
   Salsa20 symmetric stream cipher
   As specified in http://cr.yp.to/snuffle/spec.pdf.

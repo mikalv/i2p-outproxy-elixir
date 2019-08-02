@@ -1,4 +1,4 @@
-defmodule Ed25519.Hash do
+defmodule Sigterm.Crypto.Ed25519.Hash do
   @moduledoc false
   defmacro __using__(_) do
     {mod, fun, pre_args, post_args} =

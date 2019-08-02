@@ -1,4 +1,4 @@
-defmodule Chacha20 do
+defmodule Sigterm.Crypto.Chacha20 do
   @moduledoc """
   Chacha20 symmetric stream cipher
   https://tools.ietf.org/html/rfc7539

@@ -1,4 +1,4 @@
-defmodule Ed25519 do
+defmodule Sigterm.Crypto.Ed25519 do
   use Bitwise
 
   @moduledoc """
@@ -56,7 +56,7 @@ defmodule Ed25519 do
 
   # __using__ Macro generates the hash function at compile time, which allows the
   # hashing function to be configurable without runtime overhead
-  use Ed25519.Hash
+  use Sigterm.Crypto.Ed25519.Hash
   defp hashint(m), do: m |> hash |> :binary.decode_unsigned(:little)
 
   # :crypto.mod_pow chokes on negative inputs, so we feed it positive values

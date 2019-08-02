@@ -1,4 +1,4 @@
-defmodule Blake2 do
+defmodule Sigterm.Crypto.Blake2 do
   import Bitwise
 
   @moduledoc """
