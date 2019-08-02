@@ -1,6 +1,7 @@
 defmodule Proxy.ProxyPlug do
   use Plug.Builder
 
+  @host Application.get_env :proxy, :host
   @port Application.get_env :proxy, :port
 
   # Main pipeline of the application
