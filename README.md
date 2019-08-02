@@ -16,6 +16,15 @@ will start the proxy server.
 
 The http proxy server can be accessed at `127.0.0.1:4480`, while the socks v5 should be availabe at `127.0.0.1:4450`.
 
+Another SOCKS v5 example:
+```bash
+$ mix run --no-halt
+$ # resolve hostname from local
+$ curl -v --proxy 'socks5://127.0.0.1:4450' google.com
+$ # resolve hostname from remote
+$ curl -v --proxy 'socks5h://127.0.0.1:4450' google.com
+```
+
 ## Building
 To create a release use:
 
