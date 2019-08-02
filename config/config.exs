@@ -1,2 +1,6 @@
 use Mix.Config
-config :proxy, port: 8080
+config :proxy, host: "localhost"
+config :proxy, port: 4480
+config :logger,
+  level: :debug,
+  truncate: 4096
