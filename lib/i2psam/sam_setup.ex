@@ -1,39 +1,68 @@
 defmodule SamSetup do
   require Logger
 
-  @i2cp_opts "inbound.length=1 outbound.length=1 inbound.quantity=5 outbound.quantity=5 inbound.backupQuantity=3 outbound.backupQuantity=3"
+  @tunnelLength Application.get_env :i2psam, :tunnelLength
+  @tunnelQuantity Application.get_env :i2psam, :tunnelQuantity
+  @tunnelBackupQuantity Application.get_env :i2psam, :tunnelBackupQuantity
+  @i2cp_opts "inbound.length=#{@tunnelLength} outbound.length=#{@tunnelLength} inbound.quantity=#{@tunnelQuantity} outbound.quantity=#{@tunnelQuantity} inbound.backupQuantity=#{@tunnelBackupQuantity} outbound.backupQuantity=#{@tunnelBackupQuantity}"
 
-  def write_file(filename, private_key) do
-    {:ok, file} = File.open(filename, [:write])
-    IO.binwrite(file, private_key)
-    File.close(file)
-  end
-
-  def read_file(filename) do
-    {:ok, content} = File.read(filename)
-    content
-  end
-
-  def read_file(filename, success_fn, failure_fn) do
-    case File.read(filename) do
-      {:ok, body}      -> success_fn.(body) # do something with the `body`
-      {:error, reason} -> failure_fn.(reason) # handle the error caused by `reason`
-    end
+  def bootstrap(hostname \\ "127.0.0.1", port \\ 4480) do
+    setup_sam_tunnels(hostname, port)
   end
 
   def setup_sam_tunnels(hostname \\ "127.0.0.1", port \\ 4480) do
+    Logger.info "Setting up I2P SAM tunnels"
+    # Create a socket and start a session
     sampid1 = setup_sam_session()
-    # Anti pattern, try to avoid manual sleeps
-    :timer.sleep(5000)
-    {:ok, sampid2} = SamClient.start_link
-    SamClient.start_listen(sampid2, hostname, port)
+    # Create a second socket and stream foward the traffic to a local ip:port
+    sampid2 = setup_sam_tunnel_forwarding(sampid1, hostname, port)
+    # Close the first socket
+    #SamClient.close sampid1
+    {:ok, sampid1, sampid2}
   end
 
+  def reset_sam_tunnels(sampid1, sampid2, hostname \\ "127.0.0.1", port \\ 4480) when is_pid(sampid1) and is_pid(sampid2) do
+    Process.exit(sampid1, :kill)
+    Process.exit(sampid2, :kill)
+    Logger.info "Killed old I2P SAM actors/processes"
+    setup_sam_tunnels(hostname, port)
+  end
 
-  defp setup_sam_session() do
-    if File.exists?("private_key.txt") do
+  # This function sets up the forwarding to the local ip:port endpoint.
+  # The function will loop until a sam session is available.
+  defp setup_sam_tunnel_forwarding(sampid1, hostname, port) do
+    ds = :sys.get_state(sampid1)
+    session_exists = ds[:session_created]
+    if not session_exists do
+      # Anti pattern, try to avoid manual sleeps
+      :timer.sleep(5000)
+      # Call itself until session is ready
+      setup_sam_tunnel_forwarding(sampid1, hostname, port)
+    else
+      # Spawn connection number two to the sam control port,
+      # this time to issue stream forwarding for our service.
+      {:ok, sampid2} = SamClient.start_link
+      SamClient.start_listen(sampid2, sampid1, hostname, port)
+      sampid2
+    end
+  end
+
+  defp extract_private_key(sampid, privkey_filename) when is_pid(sampid) do
+    privkey = SamClient.get_private_key(sampid)
+    if is_nil(privkey) do
+      :timer.sleep(3000)
+      # Looping until available
+      extract_private_key(sampid, privkey_filename)
+    else
+      SamFiles.write_file(privkey_filename, privkey)
+      Logger.info "Wrote private key to the private_key.txt file"
+    end
+  end
+
+  def setup_sam_session(privkey_filename \\ "private_key.txt") do
+    if File.exists?(privkey_filename) do
       {:ok, sampid} = SamClient.start_link
-      read_file("private_key.txt",
+      SamFiles.read_file(privkey_filename,
         fn res ->
           SamClient.create_session(sampid, true, %{
             style: "STREAM",
@@ -42,7 +71,7 @@ defmodule SamSetup do
             sig_type: "RedDSA_SHA512_Ed25519",
             i2cp_opts: @i2cp_opts
           })
-          Logger.info "Trying to create a session based upon the private key from private_key.txt"
+          Logger.info "Trying to create a session from the private key found in #{privkey_filename}"
         end,
         fn err -> Logger.error(err) end
       )
@@ -50,13 +79,14 @@ defmodule SamSetup do
       sampid
     else
       {:ok, sampid} = SamClient.start_link
-      SamClient.create_session(sampid, true, %{ style: "STREAM", destination: "TRANSIENT", id: "outproxy", sig_type: "RedDSA_SHA512_Ed25519", i2cp_opts: @i2cp_opts })
-      :timer.sleep(3000)
-      privkey = SamClient.get_private_key(sampid)
-      if not is_nil(privkey) do
-        write_file("private_key.txt", privkey)
-        Logger.info "Wrote private key to the private_key.txt file"
-      end
+      SamClient.create_session(sampid, true, %{
+        style: "STREAM",
+        destination: "TRANSIENT",
+        id: "outproxy",
+        sig_type: "RedDSA_SHA512_Ed25519",
+        i2cp_opts: @i2cp_opts
+      })
+      extract_private_key(sampid, privkey_filename)
       # Always return the sam client pid
       sampid
     end

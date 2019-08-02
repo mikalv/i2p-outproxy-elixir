@@ -7,10 +7,11 @@ defmodule SamClient do
   end
 
   def start_link(opts \\ [sam_host: "127.0.0.1", sam_port: 7656, id: "elixir2", host: "localhost", port: 4480]) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+    GenServer.start_link(__MODULE__, opts, []) # {:name,"#{__MODULE__}#{System.unique_integer}"}
   end
 
-  def init(_) do
+  def init(opts) do
+    Logger.info "Options: #{inspect(opts)}"
     state = %{
       socket: nil,
       error: nil,
@@ -21,14 +22,19 @@ defmodule SamClient do
       remove_session: false,
       lookups: Map.new,
       ready_for_session: false,
+      session_created: false,
     }
     {:ok, state, {:continue, :connect_sam}}
   end
 
   def handle_continue(:connect_sam, %{socket: _s} = state) do
+    Logger.info "Connecting to I2P SAM"
     case connect_sam(state) do
-      {:ok, socket} -> {:noreply, %{state | socket: socket, ready_for_session: true}}
-      {:error, reason} -> Logger.error("Error connecting to I2P SAM: #{reason}")
+      {:ok, socket} ->
+        {:noreply, %{state | socket: socket, ready_for_session: true}}
+      {:error, reason} ->
+        Logger.error("Error connecting to I2P SAM: #{reason}")
+        {:noreply, state}
     end
   end
 
@@ -67,8 +73,7 @@ defmodule SamClient do
   end
 
   defp send_version(%{socket: socket} = _s) do
-    Logger.debug "-> HELLO VERSION"
-    write_line("HELLO VERSION\r\n", socket)
+    write_line("HELLO VERSION MIN=3.1 MAX=3.1\r\n", socket)
   end
 
   defp remove_session(%{id: id, socket: socket} = _s) do
@@ -86,46 +91,54 @@ defmodule SamClient do
 
   def name_lookup(pid, name \\ "ME"), do: GenServer.cast(pid, {:name_lookup, name})
 
-  def start_listen(pid,server,port) do
-    dict = :sys.get_state pid
+  def start_listen(pid, parent_sam_pid, server \\ "127.0.0.1", port \\ 4480) when is_pid(pid) and is_pid(parent_sam_pid) do
+    dict = :sys.get_state parent_sam_pid
+    id = dict[:id]
     if dict[:ready_for_session] == false do
       # Anti pattern, try to avoid manual sleeps
       Logger.info "Ops, too fast, waiting 5 sec"
       :timer.sleep(5000)
+      # Loop until all ok
+      start_listen(pid, server, port)
+    else
+      GenServer.cast(pid, {:stream_forward, %{ id: id, server_host: server, server_port: port }})
     end
-    GenServer.cast(pid, {:stream_forward, %{ server_host: server, server_port: port }})
   end
 
-  def create_session(pid, is_server \\ false, %{style: style, id: id, destination: dest, sig_type: sig_type, i2cp_opts: i2cp_opts} = opts \\ %{style: "STREAM", destination: "TRANSIENT", id: "outproxy", sig_type: "RedDSA_SHA512_Ed25519", i2cp_opts: ""}) do
+  def create_session(pid, is_server \\ false, %{style: style, id: id, destination: dest, sig_type: sig_type, i2cp_opts: i2cp_opts} = opts \\ %{style: "STREAM", destination: "TRANSIENT", id: "outproxy", sig_type: "RedDSA_SHA512_Ed25519", i2cp_opts: ""}) when is_pid(pid) do
     dict = :sys.get_state pid
     if dict[:ready_for_session] == false do
       Logger.info "Ops, too fast, waiting 5 sec"
       :timer.sleep(5000)
-    end
-    if is_server do
-      GenServer.cast pid, {:create_server_session, opts}
+      # Loop until all ok
+      create_session(pid, is_server, opts)
     else
-      GenServer.cast pid, {:create_client_session, opts}
+      if is_server do
+        GenServer.cast pid, {:create_server_session, opts}
+      else
+        GenServer.cast pid, {:create_client_session, opts}
+      end
     end
+  end
+
+  def handle_info(:kill, %{} = msg, state) do
+    Logger.info "Bye cruel world!"
   end
 
   def handle_call(:get_private_key, _from, state) do
     {:reply, String.trim(Map.get(state, :private_key, "")), state}
   end
 
-  def handle_cast({:stream_forward, %{ server_host: host, server_port: port } = msg}, state) do
-    host = Map.get(state, :server_host, "127.0.0.1")
-    port = Map.get(state, :server_port, "4480")
-    id = Map.get(state, :id, "outproxy")
+  def handle_cast({:stream_forward, %{ id: id, server_host: host, server_port: port } = msg}, state) do
     write_line("STREAM FORWARD ID=#{id} PORT=#{port} HOST=#{host} SILENT=true\r\n", Map.get(state, :socket))
     {:noreply, state}
   end
 
   def handle_cast(:close_sam, state) do
-    if state.remove_session do
-      Logger.info "Shutting down session with id #{state.id}"
-      remove_session(state)
-    end
+    #if state.remove_session do
+    #  Logger.info "Shutting down session with id #{state.id}"
+    #  remove_session(state)
+    #end
     write_line("EXIT\r\n", state.socket)
     {:noreply, %{state | id: nil, remove_session: false}}
   end
@@ -164,34 +177,45 @@ defmodule SamClient do
     {:noreply, %{state | id: id, remove_session: true}}
   end
 
-  def handle_info({:tcp, _, "SESSION STATUS RESULT=OK DESTINATION=" <> privkey = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
-    Logger.info "Destination created, got private key #{privkey}"
-    name_lookup(self())
-    {:noreply, %{state | private_key: privkey}}
+  def handle_info({:tcp, _, "EXIT STATUS RESULT=OK MESSAGE=bye" = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
+    Logger.info "Closed connection with I2P SAM successfully"
+    {:noreply, state}
   end
 
-  def handle_info({:tcp, _, "STREAM STATUS RESULT=OK\n" = msg}, state) do
-    Logger.debug "<- #{msg}"
+  def handle_info({:tcp, _, "EXIT STATUS RESULT=OK MESSAGE=" <> qmsg = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
+    Logger.info "Closed connection with SAM response: #{qmsg}"
+    {:noreply, state}
+  end
+
+  def handle_info({:tcp, _, "SESSION STATUS RESULT=OK DESTINATION=" <> privkey = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
+    Logger.info "Destination created, got private key #{privkey}"
+    name_lookup(self())
+    {:noreply, %{state | private_key: privkey, session_created: true}}
+  end
+
+  def handle_info({:tcp, _, "STREAM STATUS RESULT=OK\n" = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.info "The destination is now bound to the server port"
     {:noreply, state}
   end
 
-
-  def handle_info({:tcp, _, "STREAM STATUS RESULT=I2P_ERROR" <> _endl = msg}, state) do
-    Logger.debug "<- #{msg}"
+  def handle_info({:tcp, _, "STREAM STATUS RESULT=I2P_ERROR" <> _endl = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.error "Internal i2p error, check router logs"
     {:noreply, state}
   end
 
-  def handle_info({:tcp, _, "STREAM STATUS RESULT=INVALID_ID" <> _endl = msg}, state) do
-    Logger.debug "<- #{msg}"
+  def handle_info({:tcp, _, "STREAM STATUS RESULT=INVALID_ID" <> _endl = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.warn "Invalid session id"
     {:noreply, state}
   end
 
   def handle_info({:tcp, _, "SESSION STATUS RESULT=I2P_ERROR MESSAGE=" <> error_msg = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.error "Sam errored with #{error_msg}"
     Logger.info "Assumes we got disconnected, will reconnect"
     case connect_sam(state) do
@@ -200,20 +224,21 @@ defmodule SamClient do
     end
     {:noreply, %{state | error: error_msg}}
   end
+
   def handle_info({:tcp, _, "SESSION STATUS RESULT=" <> warn_msg = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.warn "Sam warning: #{warn_msg}"
     {:noreply, %{state | error: warn_msg}}
   end
 
   def handle_info({:tcp, _, "HELLO REPLY RESULT=OK VERSION=" <> version = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.info "Sam version is #{String.trim(version)}"
     {:noreply, %{state | sam_version: String.trim(version)}}
   end
 
   def handle_info({:tcp, _, "NAMING REPLY RESULT=OK NAME=ME VALUE=" <> own_dest = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.info "Our destination is: #{own_dest}"
     lookups = Map.merge(state.lookups, %{ME: own_dest})
     state = Map.replace(state, :lookups, lookups)
@@ -221,7 +246,7 @@ defmodule SamClient do
   end
 
   def handle_info({:tcp, _, "NAMING REPLY RESULT=OK NAME=" <> hostname_and_rest = fullmsg}, state) do
-    Logger.debug "<- #{fullmsg}"
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     [hostname, rest] = String.split(hostname_and_rest, " ")
     dest = String.replace_prefix(rest, "VALUE=", "")
     lookups = Map.merge(state.lookups, %{"#{hostname}": dest})
@@ -230,16 +255,22 @@ defmodule SamClient do
     {:noreply, state}
   end
 
-  def handle_info({:tcp, socket, "PING " <> ping_time}, state) do
+  def handle_info({:tcp, socket, "PING " <> ping_time = fullmsg}, state) do
+    Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     write_line("PONG #{String.trim(ping_time)}\r\n", socket)
     Logger.info "Responded on sam ping message #{ping_time}"
     {:noreply, state}
   end
 
-  def handle_info({:tcp,socket,packet},state) do
+  def handle_info({:tcp, _socket, packet}, state) do
     IO.inspect packet, label: "incoming packet"
     Logger.warn "Unhandled incoming packet with content: #{packet}"
-    {:noreply,state}
+    {:noreply, state}
+  end
+
+  def handle_info({:EXIT, from, reason}, state) do
+    Logger.info "Exit pid: #{inspect from} reason: #{inspect reason}"
+    {:noreply, state}
   end
 
   defp send_and_recv(socket, command) do
@@ -258,7 +289,7 @@ defmodule SamClient do
   end
 
   defp write_line(line, socket) do
-    Logger.debug "-> #{String.trim(line)}"
+    Logger.debug "(#{inspect(self())}) -> #{String.trim(line)}"
     :gen_tcp.send(socket, line)
   end
 end
