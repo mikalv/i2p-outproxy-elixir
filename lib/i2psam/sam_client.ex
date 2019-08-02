@@ -1,4 +1,4 @@
-defmodule SamClient do
+defmodule I2psam.SamClient do
   use GenServer
   require Logger
 
@@ -51,20 +51,20 @@ defmodule SamClient do
     end
   end
 
-  def handle_info(:send_version_sam, %{socket: socket} = state) do
+  def handle_info(:send_version_sam, %{socket: _s} = state) do
     send_version(state)
     {:noreply, state}
   end
 
 
-  def handle_info({:tcp_closed,socket},state) do
+  def handle_info({:tcp_closed, _s},state) do
     IO.inspect "Socket has been closed"
-    {:noreply,state}
+    {:noreply, state}
   end
 
-  def handle_info({:tcp_error,socket,reason},state) do
-    IO.inspect socket,label: "connection closed dut to #{reason}"
-    {:noreply,state}
+  def handle_info({:tcp_error, socket, reason}, state) do
+    IO.inspect socket, label: "connection closed dut to #{reason}"
+    {:noreply, state}
   end
 
   def disconnect(state, reason) do
@@ -76,15 +76,16 @@ defmodule SamClient do
     write_line("HELLO VERSION MIN=3.1 MAX=3.1\r\n", socket)
   end
 
-  defp remove_session(%{id: id, socket: socket} = _s) do
-    write_line("SESSION REMOVE ID=#{id}\r\n", socket)
-  end
+  #defp remove_session(%{id: id, socket: socket} = _s) do
+  #  write_line("SESSION REMOVE ID=#{id}\r\n", socket)
+  #end
 
   def get_private_key(pid), do: GenServer.call(pid, :get_private_key)
 
   def get_dest_address(pid) do
     dict = :sys.get_state pid
     destination = String.trim(dict[:dest])
+    destination
   end
 
   def close(pid), do: GenServer.cast(pid, :close_sam)
@@ -99,13 +100,24 @@ defmodule SamClient do
       Logger.info "Ops, too fast, waiting 5 sec"
       :timer.sleep(5000)
       # Loop until all ok
-      start_listen(pid, server, port)
+      start_listen(pid, parent_sam_pid, server, port)
     else
-      GenServer.cast(pid, {:stream_forward, %{ id: id, server_host: server, server_port: port }})
+      # We must wait until after version handshake.
+      # Therefore check our own pid state to determe if it's done or not.
+      dict = :sys.get_state pid
+      if is_nil(dict[:sam_version]) do
+        # Anti pattern, try to avoid manual sleeps
+        Logger.info "Ops, too fast, waiting 5 sec"
+        :timer.sleep(5000)
+        # Loop until all ok
+        start_listen(pid, parent_sam_pid, server, port)
+      else
+        GenServer.cast(pid, {:stream_forward, %{ id: id, server_host: server, server_port: port }})
+      end
     end
   end
 
-  def create_session(pid, is_server \\ false, %{style: style, id: id, destination: dest, sig_type: sig_type, i2cp_opts: i2cp_opts} = opts \\ %{style: "STREAM", destination: "TRANSIENT", id: "outproxy", sig_type: "RedDSA_SHA512_Ed25519", i2cp_opts: ""}) when is_pid(pid) do
+  def create_session(pid, is_server \\ false, %{style: _s, id: _id, destination: _d, sig_type: _st, i2cp_opts: _i2} = opts \\ %{style: "STREAM", destination: "TRANSIENT", id: "outproxy", sig_type: "RedDSA_SHA512_Ed25519", i2cp_opts: ""}) when is_pid(pid) do
     dict = :sys.get_state pid
     if dict[:ready_for_session] == false do
       Logger.info "Ops, too fast, waiting 5 sec"
@@ -121,15 +133,16 @@ defmodule SamClient do
     end
   end
 
-  def handle_info(:kill, %{} = msg, state) do
+  def handle_info(:kill, %{} = _msg, state) do
     Logger.info "Bye cruel world!"
+    {:noreply, state}
   end
 
   def handle_call(:get_private_key, _from, state) do
     {:reply, String.trim(Map.get(state, :private_key, "")), state}
   end
 
-  def handle_cast({:stream_forward, %{ id: id, server_host: host, server_port: port } = msg}, state) do
+  def handle_cast({:stream_forward, %{ id: id, server_host: host, server_port: port } = _msg}, state) do
     write_line("STREAM FORWARD ID=#{id} PORT=#{port} HOST=#{host} SILENT=true\r\n", Map.get(state, :socket))
     {:noreply, state}
   end
@@ -160,17 +173,15 @@ defmodule SamClient do
     {:noreply, state}
   end
 
-  def handle_cast({:create_client_session, %{style: style, id: id, destination: dest, sig_type: sig_type} = opts}, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
-    handle_create_session(false, opts, state)
+  def handle_cast({:create_client_session, %{style: style} = opts}, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
+    handle_create_session(opts, state)
   end
 
-  def handle_cast({:create_server_session, %{style: style, id: id, destination: dest, sig_type: sig_type} = opts}, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
-    handle_create_session(true, opts, state)
+  def handle_cast({:create_server_session, %{style: style} = opts}, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
+    handle_create_session(opts, state)
   end
 
-  def handle_create_session(is_server, %{style: style, id: id, destination: dest, sig_type: sig_type} = opts, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
-    host = Map.get(opts, :host, "127.0.0.1")
-    port = Map.get(opts, :port, "4480")
+  def handle_create_session(%{style: style, id: id, destination: dest, sig_type: _st} = opts, state) when style=="STREAM" or style=="DATAGRAM" or style=="RAW" do
     sig_type = Map.get(opts, :sig_type, "RedDSA_SHA512_Ed25519")
     i2cp_opts = Map.get(opts, :i2cp_opts, "")
     write_line("SESSION CREATE STYLE=#{style} ID=#{id} DESTINATION=#{String.trim(dest)} SIGNATURE_TYPE=#{sig_type} inbound.nickname=#{id} #{i2cp_opts}\r\n", Map.get(state, :socket))
@@ -241,7 +252,7 @@ defmodule SamClient do
     Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.info "Our destination is: #{own_dest}"
     lookups = Map.merge(state.lookups, %{ME: own_dest})
-    state = Map.replace(state, :lookups, lookups)
+    state = Map.put(state, :lookups, lookups)
     {:noreply, %{state | dest: own_dest}}
   end
 
@@ -273,20 +284,20 @@ defmodule SamClient do
     {:noreply, state}
   end
 
-  defp send_and_recv(socket, command) do
-    :ok = :gen_tcp.send(socket, command)
-    case :gen_tcp.recv(socket, 0) do
-      {:ok, data} -> {:ok, data}
-      {:error, :timeout} -> {:error, :timeout}
-      {:error, :einval} -> {:error, :einval}
-      _ -> {:error, :unknown}
-    end
-  end
+  #defp send_and_recv(socket, command) do
+  #  :ok = :gen_tcp.send(socket, command)
+  #  case :gen_tcp.recv(socket, 0) do
+  #    {:ok, data} -> {:ok, data}
+  #    {:error, :timeout} -> {:error, :timeout}
+  #    {:error, :einval} -> {:error, :einval}
+  #    _ -> {:error, :unknown}
+  #  end
+  #end
 
-  defp read_line(socket) do
-    {:ok, data} = :gen_tcp.recv(socket, 0)
-    data
-  end
+  #defp read_line(socket) do
+  #  {:ok, data} = :gen_tcp.recv(socket, 0)
+  #  data
+  #end
 
   defp write_line(line, socket) do
     Logger.debug "(#{inspect(self())}) -> #{String.trim(line)}"

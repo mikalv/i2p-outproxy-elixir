@@ -1,4 +1,4 @@
-defmodule SamSetup do
+defmodule I2psam.SamSetup do
   require Logger
 
   @tunnelLength Application.get_env :i2psam, :tunnelLength
@@ -41,30 +41,30 @@ defmodule SamSetup do
     else
       # Spawn connection number two to the sam control port,
       # this time to issue stream forwarding for our service.
-      {:ok, sampid2} = SamClient.start_link
-      SamClient.start_listen(sampid2, sampid1, hostname, port)
+      {:ok, sampid2} = I2psam.SamClient.start_link
+      I2psam.SamClient.start_listen(sampid2, sampid1, hostname, port)
       sampid2
     end
   end
 
   defp extract_private_key(sampid, privkey_filename) when is_pid(sampid) do
-    privkey = SamClient.get_private_key(sampid)
+    privkey = I2psam.SamClient.get_private_key(sampid)
     if is_nil(privkey) do
       :timer.sleep(3000)
       # Looping until available
       extract_private_key(sampid, privkey_filename)
     else
-      SamFiles.write_file(privkey_filename, privkey)
+      I2psam.SamFiles.write_file(privkey_filename, privkey)
       Logger.info "Wrote private key to the private_key.txt file"
     end
   end
 
   def setup_sam_session(privkey_filename \\ "private_key.txt") do
     if File.exists?(privkey_filename) do
-      {:ok, sampid} = SamClient.start_link
-      SamFiles.read_file(privkey_filename,
+      {:ok, sampid} = I2psam.SamClient.start_link
+      I2psam.SamFiles.read_file(privkey_filename,
         fn res ->
-          SamClient.create_session(sampid, true, %{
+          I2psam.SamClient.create_session(sampid, true, %{
             style: "STREAM",
             destination: res,
             id: "outproxy",
@@ -78,8 +78,8 @@ defmodule SamSetup do
       # Always return the sam client pid
       sampid
     else
-      {:ok, sampid} = SamClient.start_link
-      SamClient.create_session(sampid, true, %{
+      {:ok, sampid} = I2psam.SamClient.start_link
+      I2psam.SamClient.create_session(sampid, true, %{
         style: "STREAM",
         destination: "TRANSIENT",
         id: "outproxy",

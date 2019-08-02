@@ -1,4 +1,4 @@
-defmodule SamFiles do
+defmodule I2psam.SamFiles do
 
   def write_file(filename, private_key) do
     {:ok, file} = File.open(filename, [:write])
