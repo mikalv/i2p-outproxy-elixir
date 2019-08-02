@@ -21,7 +21,7 @@ defmodule Proxy.HttpsProxyPlug do
   defp establish_connection(conn) do
     # Open up the tunnel and send 200 back to the browser
     {host, port} = parse_connect conn
-    Logger.info "Tunnel #{host}:#{port} opened"
+    Logger.info "Tunnel (CONNECT) #{host}:#{port} opened"
     conn
     |> assign(:client_sock, conn.adapter |> elem(1) |> elem(1))
     |> assign(:host, host)
@@ -41,7 +41,7 @@ defmodule Proxy.HttpsProxyPlug do
     Enum.map(tasks, fn {task, _res} ->
       Task.shutdown(task, :brutal_kill)
     end)
-    Logger.info "Tunnel #{conn.assigns.host}:#{conn.assigns.port} closed"
+    Logger.info "Tunnel (CONNECT) #{conn.assigns.host}:#{conn.assigns.port} closed"
     conn
   end
 

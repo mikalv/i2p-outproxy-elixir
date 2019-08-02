@@ -1,6 +1,7 @@
 defmodule Proxy.HttpProxyPlug do
   import Plug.Conn
   alias Proxy.{Cache, Utils}
+  require Logger
 
   def init(opts), do: opts
 
@@ -8,6 +9,7 @@ defmodule Proxy.HttpProxyPlug do
     url = Utils.build_url conn
     body = Utils.build_body conn
     method = String.to_atom(conn.method)
+    Logger.info "#{method} #{url} requested"
 
     case HTTPoison.request(method, url, body, conn.req_headers) do
       {:ok, resp} ->
