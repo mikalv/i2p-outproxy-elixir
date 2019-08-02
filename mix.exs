@@ -52,6 +52,7 @@ defmodule Proxy.Mixfile do
   def application do
     [
       applications: [
+        :crypto,
         :logger,
         :cowboy,
         :plug,
@@ -61,6 +62,8 @@ defmodule Proxy.Mixfile do
         :observer,
         :wx,
         :runtime_tools,
+        # NOTE: Must be at the bottom (:edeliver)
+        #:edeliver,
       ],
       mod: {Proxy, []}
     ]
@@ -136,7 +139,8 @@ defmodule Proxy.Mixfile do
       {:idna, "~> 6.0"},
       # Development stuff
       {:mix_docker, "~> 0.3.0"},
-      {:distillery, "~> 2.1", override: true},
+      #{:edeliver, ">= 1.6.0"},
+      {:distillery, "~> 2.0.14", override: true},
       {:git_hooks, "~> 0.3.2-pre3", only: [:test, :dev], runtime: false},
       {:akd, "~> 0.2.2", only: :dev, runtime: false},
     ]

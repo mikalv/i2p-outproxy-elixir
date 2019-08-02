@@ -4,14 +4,41 @@
 ## Cookie for distributed erlang
 -setcookie <%= @release.options[:cookie] %>
 
+# Usage: elixir [options] [.exs file] [data]
+#
+# -v Prints version and exits
+# -e "command" Evaluates the given command ()
+# -r "file" Requires the given files/patterns ()
+# -S "script"   Finds and executes the given script
+# -pr "file" Requires the given files/patterns in parallel ()
+# -pa "path" Prepends the given path to Erlang code path ()
+# -pz "path" Appends the given path to Erlang code path ()
+# --app "app" Start the given app and its dependencies ()
+# --erl "switches" Switches to be passed down to Erlang (*)
+# --name "name" Makes and assigns a name to the distributed node
+# --sname "name" Makes and assigns a short name to the distributed node
+# --cookie "cookie" Sets a cookie for this distributed node
+# --hidden Makes a hidden node
+# --detached Starts the Erlang VM detached from console
+# --werl Uses Erlang's Windows shell GUI (Windows only)
+# --no-halt Does not halt the Erlang VM after execution
+#
+# ** Options marked with (*) can be given more than once
+# ** Options given after the .exs file or -- are passed down to the executed code
+# ** Options can be passed to the Erlang runtime using ELIXIR_ERL_OPTIONS or --erl
+
 ## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
 ## (Disabled by default..use with caution!)
 ##-heart
+
+# Unicode support
++pc unicode
 
 ## Enable kernel poll and a few async threads
 +K true
 +A 64
 
+## Number of dirty schedulers doing IO work (file, sockets, etc)
 ## For OTP21+, the +A flag is not used anymore,
 ## +SDio replace it to use dirty schedulers
 ##+SDio 5
@@ -36,6 +63,8 @@
 ## Raise the ETS table limit
 -env ERL_MAX_ETS_TABLES 8192
 
+## Increase number of concurrent ports/sockets
++Q 65536
 
 ## Increase number of concurrent ports/sockets
 ##-env ERL_MAX_PORTS 4096
@@ -64,6 +93,13 @@
 
 ## Enable colors in the shell
 -elixir ansi_enabled true
+
+## Forces option compressed on all ETS tables. Only intended for test and evaluation.
+# +ec
+
+## Tell kernel and SASL not to log anything
+# -kernel error_logger silent
+# -sasl sasl_error_logger false
 
 ## Options added after -extra are interpreted as plain arguments and can be
 ## retrieved using :init.get_plain_arguments(). Options before the "--" are

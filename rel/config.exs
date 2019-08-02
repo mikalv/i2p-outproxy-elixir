@@ -8,13 +8,28 @@
 |> Enum.map(&Code.eval_file(&1))
 
 use Mix.Releases.Config,
-  # This sets the default release built by `mix release`
+  # This sets the default release built by `mix distillery.release`
   default_release: :default,
-  # This sets the default environment used by `mix release`
+  # This sets the default environment used by `mix distillery.release`
   default_environment: Mix.env()
 
 # For a full list of config options for both releases
 # and environments, visit https://hexdocs.pm/distillery/config/distillery.html
+
+environment :default do
+  # Start hooks
+  set pre_start_hooks: "rel/hooks/pre_start"
+  set post_start_hooks: "rel/hooks/post_start"
+  # Stop hooks
+  set pre_stop_hooks: "rel/hooks/pre_stop"
+  set post_stop_hooks: "rel/hooks/post_stop"
+  # Upgrade hooks
+  set pre_upgrade_hooks: "rel/hooks/pre_upgrade"
+  set post_upgrade_hooks: "rel/hooks/post_upgrade"
+  # Configuration hooks
+  set pre_configure_hooks: "rel/hooks/pre_configure"
+  set post_configure_hooks: "rel/hooks/post_configure"
+end
 
 # You may define one or more environments in this file,
 # an environment's settings will override those of a release
@@ -28,41 +43,29 @@ environment :dev do
   # It is recommended that you build with MIX_ENV=prod and pass
   # the --env flag to Distillery explicitly if you want to use
   # dev mode.
-  set(dev_mode: true)
-  set(include_erts: false)
-  set(cookie: :"nGwE?&r1S7jo<)Ef?,!JZBD*e<R[3QUv}ww4Q9~2M~pUWDSZgwZS;d@WYtUp?:bE")
+  set dev_mode: true
+  set include_erts: false
+  set cookie: :"6/6lg?xg(7hpepHdS9:;03:Q/OHGlUD0_bCT?<wT^ial*7Y]I1fHX<e0@5/d.y1:"
+  set vm_args: "rel/vm.args"
 end
 
 environment :prod do
-  set(include_erts: true)
-  set(include_src: false)
-  set(cookie: :"0xT,5L%1R(bhS`32.V*.<f,E|Gw$em,|0~4,h.Erh)P@X3U`_*|zFZ/7NX9oT2]R")
-  set(vm_args: "rel/vm.args")
-
-  set(
-    config_providers: [
-      {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/config/runtime.exs"]}
-    ]
-  )
-
-  set(
-    overlays: [
-      {:copy, "config/runtime.exs", "config/runtime.exs"}
-    ]
-  )
+  set dev_mode: false
+  set include_erts: true
+  set include_src: false
+  set cookie: :"Ci.W_b_9TFUp~H5ES}.tp5*/fBi;xF0)sYX=bD4XKAlakp$UP.VVCeGq@Z9nwk7~"
+  set vm_args: "rel/vm.args"
 end
 
 # You may define one or more releases in this file.
 # If you have not set a default release, or selected one
-# when running `mix release`, the first release in the file
+# when running `mix distillery.release`, the first release in the file
 # will be used by default
 
-release :app do
-  set(version: current_version(:app))
-
-  set(
-    applications: [
-      :runtime_tools
-    ]
-  )
+release :proxy do
+  set version: current_version(:proxy)
+  set applications: [
+    :runtime_tools
+  ]
 end
+
