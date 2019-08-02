@@ -1,16 +1,19 @@
 defmodule I2psam.SamSetup do
   require Logger
 
+  @tunnelID Application.get_env :i2psam, :tunnelID
+  @tunnelSignatureType Application.get_env :i2psam, :signatureType
   @tunnelLength Application.get_env :i2psam, :tunnelLength
   @tunnelQuantity Application.get_env :i2psam, :tunnelQuantity
   @tunnelBackupQuantity Application.get_env :i2psam, :tunnelBackupQuantity
+
   @i2cp_opts "inbound.length=#{@tunnelLength} outbound.length=#{@tunnelLength} inbound.quantity=#{@tunnelQuantity} outbound.quantity=#{@tunnelQuantity} inbound.backupQuantity=#{@tunnelBackupQuantity} outbound.backupQuantity=#{@tunnelBackupQuantity}"
 
   def bootstrap(hostname \\ "127.0.0.1", port \\ 4480, conf_path \\ "/tmp") do
     setup_sam_tunnels(hostname, port, conf_path)
   end
 
-  def setup_sam_tunnels(hostname \\ "127.0.0.1", port \\ 4480, conf_path \\ "/tmp") do
+  defp setup_sam_tunnels(hostname, port, conf_path) do
     Logger.info "Setting up I2P SAM tunnels"
     # Create a socket and start a session
     sampid1 = setup_sam_session(Path.join(conf_path, "http-proxy-private_key.txt"))
@@ -21,11 +24,11 @@ defmodule I2psam.SamSetup do
     {:ok, sampid1, sampid2}
   end
 
-  def reset_sam_tunnels(sampid1, sampid2, hostname \\ "127.0.0.1", port \\ 4480) when is_pid(sampid1) and is_pid(sampid2) do
+  defp reset_sam_tunnels(sampid1, sampid2, hostname, port, conf_path) when is_pid(sampid1) and is_pid(sampid2) do
     Process.exit(sampid1, :kill)
     Process.exit(sampid2, :kill)
     Logger.info "Killed old I2P SAM actors/processes"
-    setup_sam_tunnels(hostname, port)
+    setup_sam_tunnels(hostname, port, conf_path)
   end
 
   # This function sets up the forwarding to the local ip:port endpoint.
@@ -67,8 +70,8 @@ defmodule I2psam.SamSetup do
           I2psam.SamClient.create_session(sampid, true, %{
             style: "STREAM",
             destination: res,
-            id: "outproxy",
-            sig_type: "RedDSA_SHA512_Ed25519",
+            id: @tunnelID,
+            sig_type: @tunnelSignatureType,
             i2cp_opts: @i2cp_opts
           })
           Logger.info "Trying to create a session from the private key found in #{privkey_filename}"
@@ -82,8 +85,8 @@ defmodule I2psam.SamSetup do
       I2psam.SamClient.create_session(sampid, true, %{
         style: "STREAM",
         destination: "TRANSIENT",
-        id: "outproxy",
-        sig_type: "RedDSA_SHA512_Ed25519",
+        id: @tunnelID,
+        sig_type: @tunnelSignatureType,
         i2cp_opts: @i2cp_opts
       })
       extract_private_key(sampid, privkey_filename)

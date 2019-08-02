@@ -2,11 +2,13 @@ defmodule I2psam.SamClient do
   use GenServer
   require Logger
 
+  @tunnelID Application.get_env :i2psam, :tunnelID
+
   def send_message(pid, message) do
     GenServer.cast(pid, {:message, message})
   end
 
-  def start_link(opts \\ [sam_host: "127.0.0.1", sam_port: 7656, id: "elixir2", host: "localhost", port: 4480]) do
+  def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, []) # {:name,"#{__MODULE__}#{System.unique_integer}"}
   end
 
@@ -18,7 +20,7 @@ defmodule I2psam.SamClient do
       dest: nil,
       sam_version: nil,
       private_key: nil,
-      id: "outproxy",
+      id: @tunnelID,
       remove_session: false,
       lookups: Map.new,
       ready_for_session: false,
@@ -27,20 +29,11 @@ defmodule I2psam.SamClient do
     {:ok, state, {:continue, :connect_sam}}
   end
 
-  def handle_continue(:connect_sam, %{socket: _s} = state) do
-    Logger.info "Connecting to I2P SAM"
-    case connect_sam(state) do
-      {:ok, socket} ->
-        {:noreply, %{state | socket: socket, ready_for_session: true}}
-      {:error, reason} ->
-        Logger.error("Error connecting to I2P SAM: #{reason}")
-        {:noreply, state}
-    end
-  end
-
-  defp connect_sam(state) do
+  def connect_sam_fn(state) do
     opts = [:binary, packet: :line, active: true, keepalive: true]
-    case :gen_tcp.connect('127.0.0.1', 7656, opts) do
+    hostname = Application.get_env(:i2psam, :samHost, '127.0.0.1')
+    port = Application.get_env(:i2psam, :samPort, 7656)
+    case :gen_tcp.connect(hostname, port, opts) do
       {:ok, socket} ->
         Logger.info "Socket connected"
         send(self(), :send_version_sam)
@@ -48,6 +41,17 @@ defmodule I2psam.SamClient do
       {:error, reason} ->
         disconnect(state, reason)
         {:error, reason}
+    end
+  end
+
+  def handle_continue(:connect_sam, %{socket: _s} = state) do
+    Logger.info "Connecting to I2P SAM"
+    case connect_sam_fn(state) do
+      {:ok, socket} ->
+        {:noreply, %{state | socket: socket, ready_for_session: true}}
+      {:error, reason} ->
+        Logger.error("Error connecting to I2P SAM: #{reason}")
+        {:noreply, state}
     end
   end
 
@@ -97,7 +101,7 @@ defmodule I2psam.SamClient do
     id = dict[:id]
     if dict[:ready_for_session] == false do
       # Anti pattern, try to avoid manual sleeps
-      Logger.info "Ops, too fast, waiting 5 sec"
+      Logger.info "Ops, too fast, sleeping 5 sec before we retry"
       :timer.sleep(5000)
       # Loop until all ok
       start_listen(pid, parent_sam_pid, server, port)
@@ -107,7 +111,7 @@ defmodule I2psam.SamClient do
       dict = :sys.get_state pid
       if is_nil(dict[:sam_version]) do
         # Anti pattern, try to avoid manual sleeps
-        Logger.info "Ops, too fast, waiting 5 sec"
+        Logger.info "Ops, too fast, sleeping 5 sec before we retry"
         :timer.sleep(5000)
         # Loop until all ok
         start_listen(pid, parent_sam_pid, server, port)
@@ -192,7 +196,7 @@ defmodule I2psam.SamClient do
     {:noreply, %{state | id: id, remove_session: true}}
   end
 
-  def handle_info({:tcp, _, "EXIT STATUS RESULT=OK MESSAGE=bye" = fullmsg}, state) do
+  def handle_info({:tcp, _, "EXIT STATUS RESULT=OK MESSAGE=" <> "bye" = fullmsg}, state) do
     Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.info "Closed connection with I2P SAM successfully"
     {:noreply, state}
@@ -233,7 +237,7 @@ defmodule I2psam.SamClient do
     Logger.debug "(#{inspect(self())}) <- #{String.trim(fullmsg)}"
     Logger.error "Sam errored with #{error_msg}"
     Logger.info "Assumes we got disconnected, will reconnect"
-    case connect_sam(state) do
+    case connect_sam_fn(state) do
       {:ok, socket} -> {:noreply, %{state | socket: socket, ready_for_session: true}}
       {:error, reason} -> Logger.error("Error connecting to I2P SAM: #{reason}")
     end
