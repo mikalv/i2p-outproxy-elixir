@@ -139,7 +139,11 @@ defmodule I2psam.SamClient do
   end
 
   def handle_call(:get_private_key, _from, state) do
-    {:reply, String.trim(Map.get(state, :private_key, "")), state}
+    pkey = Map.get(state, :private_key)
+    if not is_nil(pkey) do
+      pkey = String.trim(pkey)
+    end
+    {:reply, pkey, state}
   end
 
   def handle_cast({:stream_forward, %{ id: id, server_host: host, server_port: port } = _msg}, state) do

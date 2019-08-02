@@ -6,14 +6,14 @@ defmodule I2psam.SamSetup do
   @tunnelBackupQuantity Application.get_env :i2psam, :tunnelBackupQuantity
   @i2cp_opts "inbound.length=#{@tunnelLength} outbound.length=#{@tunnelLength} inbound.quantity=#{@tunnelQuantity} outbound.quantity=#{@tunnelQuantity} inbound.backupQuantity=#{@tunnelBackupQuantity} outbound.backupQuantity=#{@tunnelBackupQuantity}"
 
-  def bootstrap(hostname \\ "127.0.0.1", port \\ 4480) do
-    setup_sam_tunnels(hostname, port)
+  def bootstrap(hostname \\ "127.0.0.1", port \\ 4480, conf_path \\ "/tmp") do
+    setup_sam_tunnels(hostname, port, conf_path)
   end
 
-  def setup_sam_tunnels(hostname \\ "127.0.0.1", port \\ 4480) do
+  def setup_sam_tunnels(hostname \\ "127.0.0.1", port \\ 4480, conf_path \\ "/tmp") do
     Logger.info "Setting up I2P SAM tunnels"
     # Create a socket and start a session
-    sampid1 = setup_sam_session()
+    sampid1 = setup_sam_session(Path.join(conf_path, "http-proxy-private_key.txt"))
     # Create a second socket and stream foward the traffic to a local ip:port
     sampid2 = setup_sam_tunnel_forwarding(sampid1, hostname, port)
     # Close the first socket
