@@ -85,7 +85,7 @@ defmodule Proxy.Cache do
   defp cache_for(seconds, url, resp, cache) do
     Logger.info "Caching #{url} for #{seconds} seconds"
     :ets.insert(cache, {url, resp})
-    Process.send_after(self, {:expire, url}, seconds * 1000)
+    Process.send_after(self(), {:expire, url}, seconds * 1000)
   end
 
 end
