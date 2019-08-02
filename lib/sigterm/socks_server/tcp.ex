@@ -1,4 +1,4 @@
-defmodule SocksServer.TCP do
+defmodule Sigterm.SocksServer.TCP do
   @moduledoc """
   A Socks5 server.
 
