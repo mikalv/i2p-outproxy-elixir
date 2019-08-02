@@ -14,7 +14,7 @@ $ mix run --no-halt
 ```
 will start the proxy server.
 
-The server can be accessed at `localhost:8080`
+The http proxy server can be accessed at `127.0.0.1:4480`, while the socks v5 should be availabe at `127.0.0.1:4450`.
 
 ## Building
 To create a release use:
