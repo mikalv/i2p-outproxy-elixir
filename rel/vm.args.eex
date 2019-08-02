@@ -1,0 +1,75 @@
+## Name of the node
+-name <%= @release.options[:nodename] %>@127.0.0.1
+
+## Cookie for distributed erlang
+-setcookie <%= @release.options[:cookie] %>
+
+## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
+## (Disabled by default..use with caution!)
+##-heart
+
+## Enable kernel poll and a few async threads
++K true
++A 64
+
+## For OTP21+, the +A flag is not used anymore,
+## +SDio replace it to use dirty schedulers
+##+SDio 5
+
+## Treat error_logger warnings as warnings
++W w
+
+## Use Ctrl-C to interrupt the current shell rather than invoking the emulator's
+## break handler and possibly exiting the VM.
++Bc
+
+# Allow time warps so that the Erlang system time can more closely match the
+# OS system time.
++C multi_time_warp
+
+## Increase number of concurrent ports/sockets
+-env ERL_MAX_PORTS 4096
+
+## Tweak GC to run more often
+-env ERL_FULLSWEEP_AFTER 0
+
+## Raise the ETS table limit
+-env ERL_MAX_ETS_TABLES 8192
+
+
+## Increase number of concurrent ports/sockets
+##-env ERL_MAX_PORTS 4096
+
+## Tweak GC to run more often
+##-env ERL_FULLSWEEP_AFTER 10
+
+# Enable SMP automatically based on availability
+-smp auto
+
+## Load code at system startup
+## See http://erlang.org/doc/system_principles/system_principles.html#code-loading-strategy
+#-mode embedded
+
+## Save the shell history between reboots
+## See http://erlang.org/doc/man/kernel_app.html for additional options
+-kernel shell_history enabled
+
+## Enable heartbeat monitoring of the Erlang runtime system
+-heart -env HEART_BEAT_TIMEOUT 30
+
+## Start the Elixir shell
+
+-noshell
+-user Elixir.IEx.CLI
+
+## Enable colors in the shell
+-elixir ansi_enabled true
+
+## Options added after -extra are interpreted as plain arguments and can be
+## retrieved using :init.get_plain_arguments(). Options before the "--" are
+## interpreted by Elixir and anything afterwards is left around for other IEx
+## and user applications.
+-extra --no-halt
+--
+--dot-iex /etc/iex.exs
+
