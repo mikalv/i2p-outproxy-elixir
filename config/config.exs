@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :mix_docker, image: "elixir"
+
 config :proxy,
   host: "localhost",
   port: 4480
