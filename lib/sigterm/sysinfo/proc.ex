@@ -1,4 +1,4 @@
-defmodule SigtermSys.Proc do
+defmodule Sigterm.Sysinfo.Proc do
 
   def uptime do
     :c.uptime

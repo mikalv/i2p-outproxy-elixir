@@ -1,4 +1,4 @@
-defmodule SigtermSys.EtsTables do
+defmodule Sigterm.Sysinfo.EtsTables do
 
   def num_ets_tables do
     length(:ets.all)

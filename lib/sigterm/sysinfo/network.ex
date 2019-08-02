@@ -1,4 +1,4 @@
-defmodule SigtermSys.Network do
+defmodule Sigterm.Sysinfo.Network do
 
   def node_list do
     Node.list

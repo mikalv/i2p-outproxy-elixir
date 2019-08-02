@@ -1,4 +1,4 @@
-defmodule SigtermSys.Memory do
+defmodule Sigterm.Sysinfo.Memory do
 
   def fetch_processes_by_heap_memory do
     Process.list
