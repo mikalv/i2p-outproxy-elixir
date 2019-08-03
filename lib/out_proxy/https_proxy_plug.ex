@@ -23,11 +23,11 @@ defmodule OutProxy.HttpsProxyPlug do
     {host, port} = parse_connect conn
     Logger.info "Tunnel (CONNECT) #{host}:#{port} opened"
     conn
-    |> assign(:client_sock, conn.adapter |> elem(1) |> elem(1))
-    |> assign(:host, host)
-    |> assign(:port, port)
-    |> assign(:remote_sock, Socket.TCP.connect!(host, port))
-    |> send_chunked(200)
+      |> assign(:client_sock, conn.adapter |> elem(1) |> elem(1))
+      |> assign(:host, host)
+      |> assign(:port, port)
+      |> assign(:remote_sock, Socket.TCP.connect!(host, port))
+      |> send_chunked(200)
   end
 
   defp ssl_task_handle(conn) do
