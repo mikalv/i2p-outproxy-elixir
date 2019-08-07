@@ -37,6 +37,7 @@ cat <<EOF > /etc/systemd/system/i2pd.service
 Description=I2P Router written in C++
 Documentation=man:i2pd(1) https://i2pd.readthedocs.io/en/latest/
 After=network.target
+After=outproxy-keygen.service
 
 [Service]
 User=i2pd
@@ -66,7 +67,7 @@ EOF
 
 cat <<EOF > /etc/systemd/system/outproxy-keygen.service
 [Unit]
-ConditionFileNotEmpty=/var/lib/i2pd/outproxy.key.dat
+ConditionPathExists=!/var/lib/i2pd/outproxy.key.dat
 PartOf=i2pd.service
 Before=i2pd.service
 
