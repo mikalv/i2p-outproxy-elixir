@@ -38,6 +38,7 @@ User=i2pd
 Group=i2pd
 WorkingDirectory=/var/lib/i2pd
 Type=forking
+ExecPreStart=/app/boot-login.sh
 ExecStart=/usr/sbin/i2pd --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --pidfile=/var/run/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service
 ExecReload=/bin/kill -HUP \$MAINPID
 PIDFile=/var/run/i2pd/i2pd.pid
@@ -110,8 +111,8 @@ mkdir -p /var/run/i2pd /var/log/i2pd
 chown -R i2pd:i2pd /etc/i2pd /var/lib/i2pd /var/run/i2pd /var/log/i2pd
 
 # Ensure startup stuff
-echo $PWD/boot-login.sh >> /etc/rc.local
-ln -sf $PWD/boot-login.sh /etc/profile.d/outproxy-info.sh
+mkdir /app
+mv $PWD/boot-login.sh /app/boot-login.sh
 systemctl enable i2pd
 systemctl start i2pd
 
@@ -119,7 +120,6 @@ systemctl start i2pd
 export MIX_ENV=prod
 export USER=i2pd
 export HOME=/home/i2pd
-mkdir /app
 cd /app
 # Get the code
 git clone https://github.com/mikalv/i2p-outproxy-elixir.git
@@ -167,7 +167,6 @@ WantedBy=multi-user.target
 EOF
 
 # Make boot info script run at boot and login.
-mv $PWD/boot-login.sh /app/boot-login.sh
 echo /app/boot-login.sh >> /etc/rc.local
 ln -sf /app/boot-login.sh /etc/profile.d/outproxy-info.sh
 
@@ -175,6 +174,8 @@ systemctl enable outproxy
 systemctl start outproxy
 
 # Cleanup if any
+apt update
+apt upgrade -y
 apt update
 apt autoremove -y
 

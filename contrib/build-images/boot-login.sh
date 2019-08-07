@@ -16,6 +16,7 @@ if [[ ! -f "/var/lib/i2pd/outproxy.key.dat" ]]; then
   mkdir -p /var/lib/i2pd
   cd /var/lib/i2pd
   keygen outproxy.key.dat RED25519-SHA512
+  chown -R i2pd:i2pd /var/lib/i2pd
 fi
 keydest=$(keyinfo -v -d $keyfile | head -n 1 | awk '{ print $2 }')
 b32dest=$(keyinfo -v -d $keyfile | head -n+3 | tail -n1 | awk '{ print $3 }')
