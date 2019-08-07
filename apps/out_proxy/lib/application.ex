@@ -2,8 +2,8 @@ defmodule OutProxy.Application do
   use Application
   require Logger
 
-  @host Application.get_env :outproxy, :host
-  @port Application.get_env :outproxy, :port
+  @host Application.get_env :out_proxy, :host
+  @port Application.get_env :out_proxy, :port
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
