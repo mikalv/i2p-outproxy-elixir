@@ -10,7 +10,8 @@ defmodule Proxy.Mixfile do
 
   def project do
     [
-      app: :proxy,
+      #app: :proxy,
+      apps_path: "apps",
       version: version(),
       elixir: "~> 1.9",
       build_embedded: Mix.env == :prod,
@@ -36,17 +37,9 @@ defmodule Proxy.Mixfile do
 
   defp aliases do
     [
-      build: [ &build_releases/1],
+      #build: [ &build_releases/1],
       outdated: [ "hex.outdated" ]
     ]
-  end
-
-  defp build_releases(_) do
-    Mix.Tasks.Compile.run([])
-    Mix.Tasks.Archive.Build.run([])
-    Mix.Tasks.Archive.Build.run(["--output=priv-outproxy-i2p.ez"])
-    File.rename("priv-outproxy-i2p.ez", "./priv-outproxy-i2p_archives/priv-outproxy-i2p.ez")
-    File.rename("priv-outproxy-i2p-#{version()}.ez", "./priv-outproxy-i2p_archives/priv-outproxy-i2p-#{version()}.ez")
   end
 
   def application do
@@ -54,18 +47,7 @@ defmodule Proxy.Mixfile do
       applications: [
         :crypto,
         :logger,
-        :cowboy,
-        :plug,
-        :httpoison,
-        :socket,
-        :timex,
-        :observer,
-        :wx,
-        :runtime_tools,
-        # NOTE: Must be at the bottom (:edeliver)
-        #:edeliver,
-      ],
-      mod: {OutProxy, []}
+      ]
     ]
   end
 
@@ -125,20 +107,18 @@ defmodule Proxy.Mixfile do
 
   defp deps do
     [
-      {:cowboy, "~> 1.0.0"},
-      {:plug_cowboy, "~> 1.0.0"},
-      {:plug, "~> 1.0"},
-      {:exrm, "~> 1.0.8"},
-      {:httpoison, "~> 1.5.1"},
-#      {:configparser_ex, "~> 2.0.1"},
-      {:socket, "~> 0.3"},
-      {:inet_cidr, "~> 1.0.0"},
-      {:jason, "~> 1.0"},
-#     {:socket, github: "bitwalker/elixir-socket"},
-      {:timex, "~> 1.0.2", override: true},
-      {:idna, "~> 6.0"},
+      {:plug, "~> 1.8", override: true},
+      {:plug_cowboy, "~> 1.0", override: true},
+      {:phoenix, "~> 1.4", override: true},
+      {:poison, "~> 4.0", override: true},
+      #{:ffi, git: "https://github.com/joshnuss/elixir-ffi.git"},
+      {:norma, ">= 0.0.0"},
+      {:vapor, "~> 0.2"},
+
       # Development stuff
+      {:observer_cli, "~> 1.5"},
       {:mix_docker, "~> 0.3.0"},
+      {:mix_systemd, "~> 0.5.0"},
       #{:edeliver, ">= 1.6.0"},
       {:distillery, "~> 2.0.14", override: true},
       {:git_hooks, "~> 0.3.2-pre3", only: [:test, :dev], runtime: false},

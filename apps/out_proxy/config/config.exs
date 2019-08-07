@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :proxy,
+config :outproxy,
   host: "localhost",
   port: 4481
 
@@ -14,6 +14,8 @@ config :logger, :console,
   metadata: [:request_id]
 
 
-config :socks_server,
-  port: 4451,
-  host: "localhost"
+config :outproxy,
+  socks_server: [
+    port: 4451,
+    host: "localhost"
+  ]
