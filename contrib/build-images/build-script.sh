@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export DEBIAN_FRONTEND=noninteractive
 # Start with installing required packages
 apt update
 apt install tmux libz-dev git vim gnupg -y || exit 1
