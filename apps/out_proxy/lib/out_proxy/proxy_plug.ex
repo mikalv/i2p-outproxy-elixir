@@ -1,6 +1,12 @@
 defmodule OutProxy.ProxyPlug do
   use Plug.Builder
 
+  if Mix.env==:dev do
+    #use Plug.Debugger, otp_app: :outproxy_plug
+  end
+
+  require Logger
+
   @host Application.get_env :proxy, :host
   @port Application.get_env :proxy, :port
 
@@ -11,7 +17,10 @@ defmodule OutProxy.ProxyPlug do
   # If URL is not cached, pass through, otherwise serve with cache and halt
   # If connection is not HTTPS, pass through, otherwise tunnel encrypted data
   # If at the end of the pipeline we do a regular HTTP proxy and cache results
-  plug Plug.Logger
+  #plug Plug.RequestId
+  plug Plug.Logger, log: :info
+  #plug Plug.Telemetry, event_prefix: [:outproxy, :plug]
+
   plug OutProxy.BlockPlug
   plug OutProxy.CachePlug
   plug OutProxy.HttpsProxyPlug

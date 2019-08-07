@@ -45,8 +45,18 @@ defmodule OutProxy.HttpsProxyPlug do
     conn
   end
 
+  defp read_line(socket) do
+    {:ok, data} = Socket.Stream.recv!(socket, 0)
+    data
+  end
+
   defp ssl_stream(sock1, sock2) do
-    sock1 |> Socket.Stream.send!(Socket.Stream.recv!(sock2))
+    case Socket.Stream.recv!(sock2) do
+      data ->
+        sock1 |> Socket.Stream.send!(data)
+      { :error, :closed } ->
+        Logger.warn "socket closed for ssl stream"
+    end
     ssl_stream(sock1, sock2)
   end
 
