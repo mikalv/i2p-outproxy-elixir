@@ -8,7 +8,10 @@ defmodule HttpProxy do
       worker(HttpProxy.Endpoint, []),
       worker(HttpProxy.Blacklist, []),
       supervisor(Task.Supervisor, [[name: HttpProxy.SSLSupervisor]]),
-      worker(HttpProxy.Cache, [])
+      worker(HttpProxy.Cache, []),
+
+      # For pidfile :)
+      supervisor(PidFile.Supervisor, []),
     ]
 
     opts = [strategy: :one_for_one, name: HttpProxy.Supervisor]

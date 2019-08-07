@@ -13,9 +13,9 @@ defmodule OutProxy.Application do
 
     # Start up components of our application
     children = [
-      worker(OutProxy.ProxyPlug, []),
-      worker(OutProxy.BlockList, []),
-      worker(OutProxy.Cache, []),
+      #worker(OutProxy.ProxyPlug, []),
+      #worker(OutProxy.BlockList, []),
+      #worker(OutProxy.Cache, []),
       # General task supervisor
       #supervisor(Task.Supervisor, [[name: Sigterm.SocksServer.TaskSupervisor]]),
       # Starts a worker by calling: Sigterm.SocksServer.Worker.start_link(arg1, arg2, arg3)
@@ -23,14 +23,13 @@ defmodule OutProxy.Application do
       # I2P SAM client
       #worker(I2psam.SamConnectionManager, []),
       #supervisor(),
-      supervisor(PidFile.Supervisor, []),
     ]
 
     # Setup telemetry / metrics
-    OutProxy.LogRequestHandler.setup()
+    #OutProxy.LogRequestHandler.setup()
 
     opts = [strategy: :one_for_one, name: OutProxy.Supervisor]
-    Logger.info "OutProxy server running on #{@host}:#{@port}"
+    #Logger.info "OutProxy server running on #{@host}:#{@port}"
     #Logger.info "Also started beta socksv5 proxy at port #{socks_port}"
     Supervisor.start_link(children, opts)
   end
