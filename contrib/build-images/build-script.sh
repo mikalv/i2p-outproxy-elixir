@@ -39,7 +39,7 @@ User=i2pd
 Group=i2pd
 WorkingDirectory=/var/lib/i2pd
 Type=forking
-ExecPreStart=/app/boot-login.sh
+ExecStartPre=/app/boot-login.sh
 ExecStart=/usr/sbin/i2pd --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --pidfile=/var/run/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service
 ExecReload=/bin/kill -HUP \$MAINPID
 PIDFile=/var/run/i2pd/i2pd.pid
@@ -153,7 +153,6 @@ RuntimeDirectoryMode=0700
 WorkingDirectory=/app/i2p-outproxy-elixir
 Type=simple
 Environment="MIX_ENV=prod"
-ExecPreStart=cd /app/i2p-outproxy-elixir
 ExecStart=/usr/bin/mix run --no-halt
 ExecReload=/bin/kill -HUP $MAINPID
 #PIDFile=/var/run/i2pd/i2pd.pid
