@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # Start with installing required packages
 apt update
-apt install tmux libz-dev git vim libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-thread-dev make g++ libssl-dev wget libboost-system-dev gnupg -y
+apt install tmux libz-dev git vim gnupg -y || exit 1
+apt install libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev -y || exit 1
+apt install libboost-thread-dev make g++ libssl-dev wget libboost-system-dev -y || exit 1
 wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
 dpkg -i erlang-solutions_1.0_all.deb
 apt update
 # Erlang and Elixir
 apt install esl-erlang elixir -y
+# Install NodeJS
+apt install npm -y
 # Download and build I2Pd
 cd /usr/src
 git clone https://github.com/PurpleI2P/i2pd-tools.git
@@ -21,7 +25,7 @@ cp keygen keyinfo /usr/local/bin
 
 # SystemD for I2Pd
 groupadd i2pd
-useradd -d /home/i2pd -m -g i2pd -s /usr/bin/bash i2pd
+useradd -d /home/i2pd -m -g i2pd i2pd
 mkdir -p /etc/i2pd /var/lib/i2pd
 cat <<EOF > /etc/systemd/system/i2pd.service
 [Unit]
@@ -105,20 +109,60 @@ EOF
 cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
 mkdir -p /var/run/i2pd /var/log/i2pd
 chown -R i2pd:i2pd /etc/i2pd /var/lib/i2pd /var/run/i2pd /var/log/i2pd
+
+# Ensure startup stuff
+echo $PWD/boot-login.sh >> /etc/rc.local
+ln -sf $PWD/boot-login.sh /etc/profile.d/outproxy-info.sh
 systemctl enable i2pd
 systemctl start i2pd
 
 # Start building the outproxy software
+export MIX_ENV=prod
 mkdir /app
 cd /app
 # Get the code
 git clone https://github.com/mikalv/i2p-outproxy-elixir.git
 cd i2p-outproxy-elixir
+chown -R i2pd:i2pd /app
 # Install pkg managers
-mix local.hex --force
-mix local.rebar --force
+sudo -u i2pd mix local.hex --force
+sudo -u i2pd mix local.rebar --force
 # Install dependencies
-mix deps.get
-mix compile
+sudo -u i2pd mix deps.get
+sudo -u i2pd mix compile
+cd /app/i2p-outproxy-elixir/apps/admin_console/
+# Install nodejs dependencies for the admin console
+npm i
+touch /app/i2p-outproxy-elixir/apps/admin_console/config/prod.secret.exs
+sudo -u i2pd mix phx.digest
+cd /app/i2p-outproxy-elixir
+chown -R i2pd:i2pd /app
 
+cat <<EOF > /etc/systemd/system/outproxy.service
+[Unit]
+Description=I2P Outproxy Application
+After=network.target
 
+[Service]
+User=i2pd
+Group=i2pd
+RuntimeDirectory=/app/i2p-outproxy-elixir
+RuntimeDirectoryMode=0700
+WorkingDirectory=/app/i2p-outproxy-elixir
+Type=simple
+Environment="MIX_ENV=prod"
+ExecPreStart=cd /app/i2p-outproxy-elixir
+ExecStart=/usr/bin/mix run --no-halt
+ExecReload=/bin/kill -HUP $MAINPID
+#PIDFile=/var/run/i2pd/i2pd.pid
+### Uncomment, if auto restart needed
+Restart=always
+#Restart=on-failure
+KillSignal=SIGINT
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "[+] Success! We are done!"
