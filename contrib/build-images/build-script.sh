@@ -64,6 +64,23 @@ LimitNOFILE=infinity
 WantedBy=multi-user.target
 EOF
 
+cat <<EOF > /etc/systemd/system/outproxy-keygen.service
+[Unit]
+ConditionFileNotEmpty=/var/lib/i2pd/outproxy.key.dat
+Before=i2pd.service
+
+[Service]
+WorkingDirectory=/var/lib/i2pd
+ExecStart=/usr/local/bin/keygen outproxy.key.dat RED25519-SHA512
+ExecStartPost=/bin/chown i2pd:i2pd /var/lib/i2pd/outproxy.key.dat
+ExecStartPost=/bin/chmod 640 /var/lib/i2pd/outproxy.key.dat
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=i2pd.service
+EOF
+
 cat <<EOF > /etc/i2pd/i2pd.conf
 tunconf = /etc/i2pd/tunnels.conf
 pidfile = /var/lib/i2pd.pid
@@ -111,12 +128,13 @@ outbound.length=1
 i2p.streaming.initialAckDelay=20
 EOF
 cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
-mkdir -p /var/run/i2pd /var/log/i2pd
-chown -R i2pd:i2pd /etc/i2pd /var/lib/i2pd /var/run/i2pd /var/log/i2pd
+mkdir -p /var/log/i2pd
+chown -R i2pd:i2pd /etc/i2pd /var/lib/i2pd /var/log/i2pd
 
 # Ensure startup stuff
-systemctl enable i2pd
-systemctl start i2pd
+systemctl enable outproxy-keygen.service
+systemctl enable i2pd.service
+#systemctl start i2pd
 
 # Start building the outproxy software
 export MIX_ENV=prod
