@@ -67,6 +67,7 @@ EOF
 cat <<EOF > /etc/systemd/system/outproxy-keygen.service
 [Unit]
 ConditionFileNotEmpty=/var/lib/i2pd/outproxy.key.dat
+PartOf=i2pd.service
 Before=i2pd.service
 
 [Service]
