@@ -7,8 +7,8 @@ defmodule OutProxy.ProxyPlug do
 
   require Logger
 
-  @host Application.get_env :proxy, :host
-  @port Application.get_env :proxy, :port
+  @host Application.get_env :outproxy, :host
+  @port Application.get_env :outproxy, :port
 
   # Main pipeline of the application
   # Request -> Logger -> Check if blocked ->
