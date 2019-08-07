@@ -74,6 +74,7 @@ Before=i2pd.service
 [Service]
 WorkingDirectory=/var/lib/i2pd
 ExecStart=/usr/local/bin/keygen outproxy.key.dat RED25519-SHA512
+ExecStartPost=/bin/cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
 ExecStartPost=/bin/chown i2pd:i2pd /var/lib/i2pd/outproxy.key.dat
 ExecStartPost=/bin/chmod 640 /var/lib/i2pd/outproxy.key.dat
 Type=oneshot
@@ -103,7 +104,7 @@ elgamal = true
 [reseed]
 verify = true
 threshold = 150
-urls = https://reseed.i2p-projekt.de/,https://i2p.mooo.com/netDb/,https://netdb.i2p2.no/
+urls = https://reseed.i2p-projekt.de/,https://i2p.mooo.com/netDb/,https://netdb.i2p2.no/,https://reseed.onion.im/,https://reseed.memcpy.io/,https://reseed.i2p.net.in/,https://itoopie.atomike.ninja/,https://i2p.novg.net/,https://i2pseed.creativecowpat.net:8443/,https://download.xxlspeed.com/
 [addressbook]
 defaulturl = http://joajgazyztfssty4w2on5oaqksz6tqoxbduy553y34mf4byv6gpq.b32.i2p/export/alive-hosts.txt
 subscriptions = http://inr.i2p/export/alive-hosts.txt,http://stats.i2p/cgi-bin/newhosts.txt,http://rus.i2p/hosts.txt
