@@ -22,7 +22,6 @@ defmodule OutProxy.Application do
       #worker(Task, [Sigterm.SocksServer.TCP, :listen, [socks_port]]),
       # I2P SAM client
       #worker(I2psam.SamConnectionManager, []),
-      #supervisor(),
     ]
 
     # Setup telemetry / metrics

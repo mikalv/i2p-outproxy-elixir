@@ -4,4 +4,4 @@ use Mix.Config
 config :logger, level: :info
 
 # PID filename
-config :out_proxy, pid_file: "/var/run/i2pd/outproxy.pid"
+config :out_proxy, pid_file: "/var/lib/i2pd/outproxy.pid"

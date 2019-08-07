@@ -48,7 +48,6 @@ defmodule OutProxy.MixProject do
       {:httpoison, "~> 1.5.1"},
       {:socket, "~> 0.3"},
       {:inet_cidr, "~> 1.0.0"},
-#     {:socket, github: "bitwalker/elixir-socket"},
       {:timex, "~> 1.0.2", override: true},
       {:idna, "~> 6.0"},
       {:telemetry, "~> 0.4.0"},

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 export DEBIAN_FRONTEND=noninteractive
+export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+# Move the script first of all
+mkdir /app
+mv $SCRIPT_DIR/boot-login.sh /app/boot-login.sh
 # Start with installing required packages
 apt update
 apt install tmux libz-dev git vim gnupg -y || exit 1
@@ -18,10 +22,10 @@ git clone https://github.com/PurpleI2P/i2pd-tools.git
 cd i2pd-tools
 git clone https://github.com/PurpleI2P/i2pd.git
 cd i2pd
-make || exit 1
+make -j $(nproc) || exit 1
 cp i2pd /usr/sbin/i2pd
 cd ..
-make || exit 1
+make -j $(nproc) || exit 1
 cp keygen keyinfo /usr/local/bin
 
 # SystemD for I2Pd
@@ -39,10 +43,9 @@ User=i2pd
 Group=i2pd
 WorkingDirectory=/var/lib/i2pd
 Type=forking
-ExecStartPre=/app/boot-login.sh
-ExecStart=/usr/sbin/i2pd --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --pidfile=/var/run/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service
+ExecStart=/usr/sbin/i2pd --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --pidfile=/var/lib/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service
 ExecReload=/bin/kill -HUP \$MAINPID
-PIDFile=/var/run/i2pd/i2pd.pid
+PIDFile=/var/lib/i2pd/i2pd.pid
 ### Uncomment, if auto restart needed
 Restart=always
 #Restart=on-failure
@@ -63,7 +66,7 @@ EOF
 
 cat <<EOF > /etc/i2pd/i2pd.conf
 tunconf = /etc/i2pd/tunnels.conf
-pidfile = /var/run/i2pd.pid
+pidfile = /var/lib/i2pd.pid
 log = file
 logfile = /var/log/i2pd/i2pd.log
 loglevel = warn
@@ -112,8 +115,6 @@ mkdir -p /var/run/i2pd /var/log/i2pd
 chown -R i2pd:i2pd /etc/i2pd /var/lib/i2pd /var/run/i2pd /var/log/i2pd
 
 # Ensure startup stuff
-mkdir /app
-mv $PWD/boot-login.sh /app/boot-login.sh
 systemctl enable i2pd
 systemctl start i2pd
 
@@ -155,7 +156,7 @@ Type=simple
 Environment="MIX_ENV=prod"
 ExecStart=/usr/bin/mix run --no-halt
 ExecReload=/bin/kill -HUP $MAINPID
-#PIDFile=/var/run/i2pd/i2pd.pid
+#PIDFile=/var/lib/i2pd/i2pd.pid
 ### Uncomment, if auto restart needed
 Restart=always
 #Restart=on-failure
