@@ -1,0 +1,14 @@
+<div class="main row">
+  <div class="console col-lg-7" id="messages">
+  </div>
+  <div class="block col-lg-5" id="block_things">
+    <div class="form">
+      <input type="text" id="block_input" value=""></input>
+      <button class="btn btn-default"onclick="blockUrl()">Block</button>
+    </div>
+    <h2>Black List</h2>
+    <div class="blocks" id="block_list">
+    </div>
+    <button class="btn btn-default"onclick="unblockAll()">Unblock All</button>
+  </div>
+</div>
