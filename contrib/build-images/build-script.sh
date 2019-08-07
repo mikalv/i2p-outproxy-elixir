@@ -36,8 +36,7 @@ After=network.target
 [Service]
 User=i2pd
 Group=i2pd
-RuntimeDirectory=/var/lib/i2pd
-RuntimeDirectoryMode=0700
+WorkingDirectory=/var/lib/i2pd
 Type=forking
 ExecStart=/usr/sbin/i2pd --conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --pidfile=/var/run/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service
 ExecReload=/bin/kill -HUP \$MAINPID
@@ -118,6 +117,8 @@ systemctl start i2pd
 
 # Start building the outproxy software
 export MIX_ENV=prod
+export USER=i2pd
+export HOME=/home/i2pd
 mkdir /app
 cd /app
 # Get the code
@@ -136,7 +137,7 @@ npm i
 touch /app/i2p-outproxy-elixir/apps/admin_console/config/prod.secret.exs
 sudo -u i2pd mix phx.digest
 cd /app/i2p-outproxy-elixir
-chown -R i2pd:i2pd /app
+chown -R i2pd:i2pd /app /home/i2pd
 
 cat <<EOF > /etc/systemd/system/outproxy.service
 [Unit]
@@ -164,5 +165,17 @@ LimitNOFILE=65536
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# Make boot info script run at boot and login.
+mv $PWD/boot-login.sh /app/boot-login.sh
+echo /app/boot-login.sh >> /etc/rc.local
+ln -sf /app/boot-login.sh /etc/profile.d/outproxy-info.sh
+
+systemctl enable outproxy
+systemctl start outproxy
+
+# Cleanup if any
+apt update
+apt autoremove -y
 
 echo "[+] Success! We are done!"

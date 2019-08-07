@@ -32,4 +32,3 @@ printconsole "NOTE: Please let the router run for 5-10min the first time before 
 printconsole "The reason for this is that the router will explore the i2p network and find more peers and not get a list from some centralized servers. :)\n\n"
 
 
-exit 0
