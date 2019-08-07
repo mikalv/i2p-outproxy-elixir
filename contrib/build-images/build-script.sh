@@ -98,8 +98,8 @@ port=4480
 keys=outproxy.key.dat
 inbound.quantity=25
 outbound.quantity=25
-inbound.length=3
-outbound.length=3
+inbound.length=1
+outbound.length=1
 i2p.streaming.initialAckDelay=20
 EOF
 cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
