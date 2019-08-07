@@ -1,32 +1,22 @@
+# This file is responsible for configuring your application
+# and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+# By default, the umbrella project as well as each child
+# application will require this configuration file, ensuring
+# they all use the same configuration. While one could
+# configure all applications here, we prefer to delegate
+# back to each application for organization purposes.
+import_config "../apps/*/config/config.exs"
+
+# Sample configuration (overrides the imported configuration above):
+#
+#     config :logger, :console,
+#       level: :info,
+#       format: "$date $time [$level] $metadata$message\n",
+#       metadata: [:user_id]
+
 config :mix_docker, image: "elixir"
-
-config :proxy,
-  host: "localhost",
-  port: 4480
-
-# Configures Elixir's Logger
-config :logger,
-  level: :debug,
-  truncate: 4096
-
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
-
-config :socks_server,
-  port: 4450,
-  host: "localhost"
-
-config :i2psam,
-  tunnelLength: 1,
-  tunnelQuantity: 5,
-  tunnelBackupQuantity: 2,
-  signatureType: "RedDSA_SHA512_Ed25519",
-  tunnelID: "private-outproxy",
-  samHost: '127.0.0.1',
-  samPort: 7656
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
