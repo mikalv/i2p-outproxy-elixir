@@ -4,7 +4,6 @@ systemctl stop outproxy
 apt update
 apt -y upgrade
 rm -rf /tmp/* /var/tmp/*
-rm -fr /var/lib/i2pd/*
 history -c
 cat /dev/null > /root/.bash_history
 unset HISTFILE

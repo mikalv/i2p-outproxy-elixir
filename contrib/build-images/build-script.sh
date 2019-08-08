@@ -74,7 +74,7 @@ Before=i2pd.service
 [Service]
 WorkingDirectory=/var/lib/i2pd
 ExecStart=/usr/local/bin/keygen outproxy.key.dat RED25519-SHA512
-ExecStartPost=/bin/cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
+#ExecStartPost=/bin/cp -r /usr/src/i2pd-tools/i2pd/contrib/certificates /var/lib/i2pd/
 ExecStartPost=/bin/chown i2pd:i2pd /var/lib/i2pd/outproxy.key.dat
 ExecStartPost=/bin/chmod 640 /var/lib/i2pd/outproxy.key.dat
 Type=oneshot

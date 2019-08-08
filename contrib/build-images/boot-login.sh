@@ -12,7 +12,7 @@ function printconsole() {
 printconsole "\n\n\n\n\n"
 printconsole "Welcome to the private outproxy setup for I2P users!\n\n\n"
 
-if [[ ! -f "/var/lib/i2pd/outproxy.key.dat" ]]; then
+if [[ -f "/var/lib/i2pd/outproxy.key.dat" ]]; then
   keydest=$(keyinfo -v -d $keyfile | head -n 1 | awk '{ print $2 }')
   b32dest=$(keyinfo -v -d $keyfile | head -n+3 | tail -n1 | awk '{ print $3 }')
   printconsole "Your destination base64 address is: $keydest\n\n"
