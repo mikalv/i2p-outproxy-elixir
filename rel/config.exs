@@ -65,7 +65,9 @@ end
 release :proxy do
   set version: current_version(:proxy)
   set applications: [
-    :runtime_tools
+    :runtime_tools,
+    :http_proxy,
+    :logger,
   ]
 end
 

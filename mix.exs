@@ -28,7 +28,7 @@ defmodule Proxy.Mixfile do
   end
 
   defp hostname do
-    System.cmd("hostname", []) |> elem(0) |> String.strip
+    System.cmd("hostname", []) |> elem(0) |> String.trim
   end
 
   # Specifies which paths to compile per environment.
@@ -47,6 +47,7 @@ defmodule Proxy.Mixfile do
       applications: [
         :crypto,
         :logger,
+        :http_proxy,
       ]
     ]
   end
@@ -55,7 +56,10 @@ defmodule Proxy.Mixfile do
     [
       include_erts: true,
       include_executables_for: [:unix],
-      applications: [runtime_tools: :permanent],
+      applications: [
+        runtime_tools: :permanent,
+        http_proxy: :permanent
+      ],
       overwrite: true,
       cookie: "#{:proxy}_cookie",
       nodename: "private-outproxy",
