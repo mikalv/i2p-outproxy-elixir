@@ -27,7 +27,7 @@ defmodule AdminConsole.Web do
       use Phoenix.Controller
 
       import AdminConsole.Router.Helpers
-      import AdminConsole.Gettext
+      #import AdminConsole.Gettext
     end
   end
 
@@ -43,7 +43,7 @@ defmodule AdminConsole.Web do
 
       import AdminConsole.Router.Helpers
       import AdminConsole.ErrorHelpers
-      import AdminConsole.Gettext
+      #import AdminConsole.Gettext
     end
   end
 
@@ -56,7 +56,7 @@ defmodule AdminConsole.Web do
   def channel do
     quote do
       use Phoenix.Channel
-      import AdminConsole.Gettext
+      #import AdminConsole.Gettext
     end
   end
 

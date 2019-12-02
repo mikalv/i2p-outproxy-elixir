@@ -11,7 +11,7 @@ defmodule AdminConsole.Mixfile do
       lockfile: "../../mix.lock",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers,
+      compilers: [:phoenix] ++ Mix.compilers,
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       deps: deps()
@@ -29,7 +29,7 @@ defmodule AdminConsole.Mixfile do
         :phoenix_html,
         :cowboy,
         :logger,
-        :gettext,
+        #:gettext,
         :http_proxy
       ]
     ]
@@ -47,7 +47,7 @@ defmodule AdminConsole.Mixfile do
       {:phoenix, "~> 1.4"},
       {:phoenix_html, "~> 2.3"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:gettext, "~> 0.9"},
+      #{:gettext, "~> 0.9"},
       {:cowboy, "~> 1.0"},
       {:plug, "~> 1.8.3"},
       {:poison, "~> 4.0"},
