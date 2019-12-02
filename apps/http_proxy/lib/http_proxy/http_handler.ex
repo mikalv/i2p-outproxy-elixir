@@ -19,8 +19,16 @@ defmodule HttpProxy.HttpHandler do
     # if not - the forwarding crashes and burns, might eat your childs as well.
     headers = Keyword.drop(conn.assigns.headers, ["host","proxy-connection"])
 
-    req_options = [follow_redirect: true, hackney: [force_redirect: true]]
-    if Application.get_env(:out_proxy, :redirect_to_tor, false) do
+    req_options = [
+      follow_redirect: true,
+      hackney: [
+        pool: :httpc_pool
+      ],
+      max_redirect: 7,
+      recv_timeout: 10_000,
+      timeout: 12_000,
+    ]
+    if Application.get_env(:http_proxy, :redirect_to_tor, false) do
       do_request(conn, method, url, body, headers, req_options ++ [proxy: {:socks5, "127.0.0.1", 9050}])
     else
       do_request(conn, method, url, body, headers, req_options)

@@ -72,7 +72,7 @@ defmodule HttpProxy.CacheLookup do
     end
 
     conn
-    |> HttpProxy.HttpHandler.forward_response(conn)
+    |> HttpProxy.HttpHandler.forward_response
     |> halt
   end
 end

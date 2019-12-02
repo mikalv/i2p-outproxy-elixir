@@ -22,8 +22,11 @@ defmodule HttpProxy.Endpoint do
   def init(opts), do: opts
 
   def start_link do
-    # port = Application.get_env :out_proxy, :port
-    port = 4480
+    port = Application.get_env(:http_proxy, :http_listen_port)
+    :ok = :hackney_pool.start_pool(:httpc_pool, [
+      timeout: 15_000,
+      max_connections: 1_000
+    ])
     Logger.info("Running #{__MODULE__} on port #{port}")
     {:ok, _} = Plug.Adapters.Cowboy.http(__MODULE__, [], port: port)
   end

@@ -25,7 +25,8 @@ defmodule HttpProxy.Mixfile do
         :logger,
         :cowboy,
         :plug,
-        :httpoison
+        :httpoison,
+        :dns
       ],
       mod: {HttpProxy, []}
     ]
@@ -50,6 +51,7 @@ defmodule HttpProxy.Mixfile do
       {:plug_cowboy, "~> 1.0"},
       {:plug,      "~> 1.8"},
       {:httpoison, "~> 1.5.1"},
+      {:dns, "~> 2.1.2"},
     ]
   end
 end

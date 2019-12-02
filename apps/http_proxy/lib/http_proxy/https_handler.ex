@@ -26,7 +26,7 @@ defmodule HttpProxy.HttpsHandler do
 
   defp open_remote_connection(conn) do
     [bin_host, port] = String.split(conn.request_path, ":")
-    host = String.to_char_list(bin_host)
+    host = String.to_charlist(bin_host)
     port = String.to_integer(port)
 
     {status, sock} = case :gen_tcp.connect(host, port, [:binary, active: false]) do
