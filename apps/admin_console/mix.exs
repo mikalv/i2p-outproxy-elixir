@@ -23,7 +23,7 @@ defmodule AdminConsole.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {AdminConsole, []},
+      mod: {AdminConsole.Application, []},
       applications: [
         :phoenix,
         :phoenix_html,
