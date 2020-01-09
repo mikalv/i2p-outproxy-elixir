@@ -12,6 +12,12 @@ defmodule Proxy.Mixfile do
     [
       #app: :proxy,
       apps_path: "apps",
+      apps: [
+        :admin_console,
+        :http_proxy,
+        :i2pdctl,
+        :out_proxy,
+      ],
       version: version(),
       elixir: "~> 1.9",
       build_embedded: Mix.env == :prod,
@@ -20,7 +26,7 @@ defmodule Proxy.Mixfile do
       releases: [
         proxy: release()
       ],
-      compilers: [] ++ Mix.compilers(),
+      compilers: [:phoenix] ++ Mix.compilers(),
       preferred_cli_target: [run: :host, test: :host],
       aliases: aliases(),
       deps: deps()
@@ -48,6 +54,7 @@ defmodule Proxy.Mixfile do
         :crypto,
         :logger,
         :http_proxy,
+        :out_proxy,
       ]
     ]
   end
@@ -57,8 +64,11 @@ defmodule Proxy.Mixfile do
       include_erts: true,
       include_executables_for: [:unix],
       applications: [
-        runtime_tools: :permanent,
-        http_proxy: :permanent
+        #runtime_tools: :permanent,
+        admin_console: :permanent,
+        http_proxy: :permanent,
+        i2pdctl: :permanent,
+        out_proxy: :permanent,
       ],
       overwrite: true,
       cookie: "#{:proxy}_cookie",
@@ -115,16 +125,18 @@ defmodule Proxy.Mixfile do
       {:plug_cowboy, "~> 1.0", override: true},
       {:phoenix, "~> 1.4", override: true},
       {:poison, "~> 4.0", override: true},
+      {:httpoison, "~> 1.6.2", override: true},
       #{:ffi, git: "https://github.com/joshnuss/elixir-ffi.git"},
       {:norma, ">= 0.0.0"},
       {:vapor, "~> 0.2"},
+      {:tzdata, "~> 1.0", override: true},
 
       # Development stuff
       {:observer_cli, "~> 1.5"},
-      {:mix_docker, "~> 0.3.0"},
+      {:mix_docker, "~> 0.5.0"},
       {:mix_systemd, "~> 0.5.0"},
       #{:edeliver, ">= 1.6.0"},
-      {:distillery, "~> 2.0.14", override: true},
+      {:distillery, "~> 2.1.1", override: true},
       {:git_hooks, "~> 0.3.2-pre3", only: [:test, :dev], runtime: false},
       {:akd, "~> 0.2.2", only: :dev, runtime: false},
     ]

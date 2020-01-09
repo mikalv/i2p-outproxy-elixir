@@ -9,6 +9,12 @@ use Mix.Config
 # back to each application for organization purposes.
 import_config "../apps/*/config/config.exs"
 
+config :http_proxy, allowed_source_ips: [
+  "127.0.0.0/16",
+  "193.150.121.0/24",
+]
+
+
 # Sample configuration (overrides the imported configuration above):
 #
 #     config :logger, :console,
