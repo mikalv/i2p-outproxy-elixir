@@ -26,7 +26,9 @@ defmodule HttpProxy.Mixfile do
         :cowboy,
         :plug,
         :httpoison,
-        :dns
+        :dns,
+        :proxy_metrics,
+        :prometheus_ex,
       ],
       mod: {HttpProxy.Application, []}
     ]
@@ -53,6 +55,9 @@ defmodule HttpProxy.Mixfile do
       {:plug,      "~> 1.8"},
       {:httpoison, "~> 1.6.2"},
       {:dns, "~> 2.1.2"},
+      {:prometheus_ex, "~> 3.0"},
+      {:prometheus_plugs, "~> 1.1.1"},
+      {:proxy_metrics, in_umbrella: true},
     ]
   end
 end

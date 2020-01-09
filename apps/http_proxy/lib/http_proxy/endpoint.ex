@@ -11,7 +11,9 @@ defmodule HttpProxy.Endpoint do
 
   plug Plug.RequestId
   plug Plug.Logger, log: :info
-  #plug Plug.Telemetry, event_prefix: [:outproxy, :plug]
+  plug HttpProxy.PlugPipelineInstrumenter
+  plug HttpProxy.PlugProxyInstrumenter
+  plug Plug.Telemetry, event_prefix: [:outproxy, :plug]
 
   plug HttpSetup
   plug Blacklist

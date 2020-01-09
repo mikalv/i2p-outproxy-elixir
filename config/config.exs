@@ -14,6 +14,27 @@ config :http_proxy, allowed_source_ips: [
   "193.150.121.0/24",
 ]
 
+config :phoenix,
+  serve_endpoints: true,
+  persistent: true
+
+config :prometheus, ProxyMetrics.MetricsPlugExporter,
+  path: "/metrics",
+  format: :auto, ## or :protobuf, or :text
+  registry: :default,
+  auth: false
+
+config :prometheus, HttpProxy.PlugPipelineInstrumenter,
+  labels: [:status_class, :method, :host, :scheme],
+  duration_buckets: [10, 100, 1_000, 10_000, 100_000,
+                     300_000, 500_000, 750_000, 1_000_000,
+                     1_500_000, 2_000_000, 3_000_000],
+  registry: :default,
+  duration_unit: :microseconds
+
+config :proxy_metrics, http_listen_port: 4650
+
+config :hackney, mod_metrics: ProxyMetrics.Hackney.Metrics
 
 # Sample configuration (overrides the imported configuration above):
 #

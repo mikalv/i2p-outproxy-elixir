@@ -5,10 +5,29 @@ defmodule HttpProxy.HttpHandler do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    conn
-    |> forward_request
-    |> cache_response
-    |> forward_response
+    allowed_ranges = Enum.map Application.get_env(:http_proxy, :allowed_source_ips, []), &InetCidr.parse(&1)
+    allowed = length(Enum.filter(allowed_ranges, fn src_ips ->
+      InetCidr.contains? src_ips, conn.remote_ip
+    end)) > 0
+
+    verb = conn.method
+    uri  = "http://#{conn.host}:#{conn.port}"
+    str_ip = {conn.remote_ip,conn.remote_ip,32} |> InetCidr.to_string
+
+    case allowed do
+      true ->
+        conn
+          |> forward_request
+          |> cache_response
+          |> forward_response
+      false ->
+        HttpProxy.PlugProxyInstrumenter.increment_http_requests_error_denied!
+        Logger.warn "Denied request from #{str_ip}", verb, uri
+        conn
+          |> send_resp(401,"")
+          |> Map.put(:state, :sent)
+          |> halt
+    end
   end
 
   defp forward_request(conn) do

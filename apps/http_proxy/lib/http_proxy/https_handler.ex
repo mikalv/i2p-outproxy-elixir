@@ -16,17 +16,24 @@ defmodule HttpProxy.HttpsHandler do
     allowed = length(Enum.filter(allowed_ranges, fn src_ips ->
       InetCidr.contains? src_ips, conn.remote_ip
     end)) > 0
-    Logger.info "allowed => #{inspect allowed}", "CONNECT", "https://#{bin_host}:#{port}"
+
+    verb = "CONNECT"
+    uri  = "https://#{bin_host}:#{port}"
+
+    Logger.info "allowed => #{inspect allowed}", verb, uri
+    str_ip = {conn.remote_ip,conn.remote_ip,32} |> InetCidr.to_string
 
     case allowed do
       true ->
-        Logger.info "Allowing request => #{inspect bin_host}", "CONNECT", "https://#{bin_host}:#{port}"
+        Logger.info "Allowing request from (#{str_ip}) => #{inspect bin_host}", verb, uri
         conn
           |> https_setup
           |> SSLTunnel.tunnel_traffic
           |> Map.put(:state, :sent)
           |> halt
       false ->
+        HttpProxy.PlugProxyInstrumenter.increment_http_requests_error_denied!
+        Logger.warn "Denied request from #{str_ip}", verb, uri
         conn
           |> send_resp(401,"")
           |> Map.put(:state, :sent)
