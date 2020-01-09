@@ -1,5 +1,5 @@
 defmodule HttpProxy.Shared do
-  import Plug.Conn
+  #import Plug.Conn
 
   def alter_resp_headers(headers) do
     List.keydelete(headers, "server", 0)

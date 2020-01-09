@@ -28,7 +28,7 @@ defmodule HttpProxy.Mixfile do
         :httpoison,
         :dns
       ],
-      mod: {HttpProxy, []}
+      mod: {HttpProxy.Application, []}
     ]
   end
 
@@ -47,10 +47,11 @@ defmodule HttpProxy.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
+      {:inet_cidr, "~> 1.0.0"},
       {:cowboy,    "~> 1.0"},
       {:plug_cowboy, "~> 1.0"},
       {:plug,      "~> 1.8"},
-      {:httpoison, "~> 1.5.1"},
+      {:httpoison, "~> 1.6.2"},
       {:dns, "~> 2.1.2"},
     ]
   end

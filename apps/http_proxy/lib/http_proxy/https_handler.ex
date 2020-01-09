@@ -1,16 +1,39 @@
 defmodule HttpProxy.HttpsHandler do
   import Plug.Conn
   alias HttpProxy.{SSLTunnel, Logger}
+  require Logger
 
   def init(opts), do: opts
 
   def call(%Plug.Conn{method: "CONNECT"} = conn, _opts) do
-    conn
-    |> https_setup
-    |> SSLTunnel.tunnel_traffic
-    |> Map.put(:state, :sent)
-    |> halt
+    #IO.puts "conn => #{inspect conn}"
+    [bin_host, port] = String.split(conn.request_path, ":")
+    #Logger.info "conn.remote_ip => #{inspect conn.remote_ip}", "CONNECT", "https://#{bin_host}:#{port}"
+    #parsed = {conn.remote_ip,conn.remote_ip,32} |> InetCidr.to_string
+    #Logger.info "parsed => #{inspect parsed}", "CONNECT", "https://#{bin_host}:#{port}"
+
+    allowed_ranges = Enum.map Application.get_env(:http_proxy, :allowed_source_ips, []), &InetCidr.parse(&1)
+    allowed = length(Enum.filter(allowed_ranges, fn src_ips ->
+      InetCidr.contains? src_ips, conn.remote_ip
+    end)) > 0
+    Logger.info "allowed => #{inspect allowed}", "CONNECT", "https://#{bin_host}:#{port}"
+
+    case allowed do
+      true ->
+        Logger.info "Allowing request => #{inspect bin_host}", "CONNECT", "https://#{bin_host}:#{port}"
+        conn
+          |> https_setup
+          |> SSLTunnel.tunnel_traffic
+          |> Map.put(:state, :sent)
+          |> halt
+      false ->
+        conn
+          |> send_resp(401,"")
+          |> Map.put(:state, :sent)
+          |> halt
+    end
   end
+
   def call(conn, _opts), do: conn
 
   defp https_setup(conn) do
@@ -32,7 +55,7 @@ defmodule HttpProxy.HttpsHandler do
     {status, sock} = case :gen_tcp.connect(host, port, [:binary, active: false]) do
       {:ok, socket} ->
         :gen_tcp.send(conn.assigns.client_socket, "HTTP/1.1 200 Connection established\r\n\r\n")
-        Logger.info(" Opened -- #{host}", "SSL Tunnel", bin_host)
+        Logger.info(" Opened -- #{host}:#{port}", "SSL Tunnel", bin_host)
         {:ok, socket}
       _ ->
         Logger.error(" -- SSL connection error: #{host}", "Error", bin_host)
